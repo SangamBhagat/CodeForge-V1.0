@@ -196,7 +196,7 @@ button:disabled{
 
 .workspace{
   display:grid;
-  grid-template-columns:minmax(0,420px) minmax(0,1fr);
+  grid-template-columns:repeat(3,minmax(0,1fr));
   gap:14px;
 }
 
@@ -206,10 +206,12 @@ button:disabled{
   padding:12px;
   box-shadow:0 4px 14px rgba(0,0,0,.08);
 }
+.chart-panel{min-width:0}
+.grading-panel{grid-column:1/-1}
 
 .stats{
   display:grid;
-  grid-template-columns:repeat(5,1fr);
+  grid-template-columns:repeat(auto-fit,minmax(56px,1fr));
   gap:6px;
   margin-top:8px;
 }
@@ -229,7 +231,9 @@ button:disabled{
 .chart-canvas{
   display:block;
   width:100%;
+  max-width:480px;
   height:auto;
+  margin-inline:auto;
 }
 .chart-note,
 .box-summary{
@@ -526,7 +530,7 @@ body.dark-mode #timerArc{stroke:#a78bfa}
 
 <div class="workspace">
   <!-- ANALYTICS -->
-  <div class="panel">
+  <div class="panel chart-panel">
     <h3 class="chart-title">Marks distribution</h3>
     <canvas class="chart-canvas" id="hist" width="380" height="240" role="img" aria-label="Histogram of marks with a fitted normal curve"></canvas>
     <p class="chart-note">Bars show students in each 10-mark band; the line is a normal curve fitted to the marks.</p>
@@ -538,18 +542,20 @@ body.dark-mode #timerArc{stroke:#a78bfa}
       <div class="stat">Avg<br><b id="avg"></b></div>
       <div class="stat">Median<br><b id="med"></b></div>
     </div>
-
+  </div>
+  <div class="panel chart-panel">
     <h3 class="chart-title">Marks spread</h3>
     <canvas class="chart-canvas" id="boxPlot" width="380" height="140" role="img" aria-label="Box plot of marks with quartiles, whiskers and outliers"></canvas>
     <div class="box-summary" id="boxSummary"></div>
-
+  </div>
+  <div class="panel chart-panel">
     <h3 class="chart-title">Grade distribution</h3>
     <canvas class="chart-canvas" id="gradeDonut" width="380" height="220" role="img" aria-label="Donut chart of grade distribution"></canvas>
     <div class="grade-summary" id="gradeSummary"></div>
   </div>
 
   <!-- GRADING -->
-  <div class="panel">
+  <div class="panel grading-panel">
     <div class="student-search">
       <label for="studentSearch">Student Search + Grade Preview</label>
       <input id="studentSearch" type="search" placeholder="Search by BITS ID" autocomplete="off" disabled>
