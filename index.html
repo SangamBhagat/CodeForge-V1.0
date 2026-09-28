@@ -241,6 +241,8 @@ button:disabled{
   padding:12px;
 }
 .chart-panel{min-width:0}
+.spread-panel{display:flex;flex-direction:column}
+.spread-panel .box-summary{margin-bottom:14px}
 .grading-panel{grid-column:1/-1}
 
 .stats{
@@ -397,8 +399,14 @@ button.enabled{
 }
 
 /* ===== TIMER CLOCK ===== */
+.timer-section{
+  margin-top:auto;
+  padding:10px 12px;
+  border-radius:10px;
+}
+.timer-section .chart-title{text-align:center}
 .timer-wrapper{
-  margin-top:14px;
+  margin-top:8px;
   display:flex;
   justify-content:center;
 }
@@ -577,10 +585,26 @@ body.dark-mode #timerArc{stroke:#a78bfa}
       <div class="stat">Median<br><b id="med"></b></div>
     </div>
   </div>
-  <div class="panel chart-panel">
+  <div class="panel chart-panel spread-panel">
     <h3 class="chart-title">Marks spread</h3>
     <canvas class="chart-canvas" id="boxPlot" width="380" height="140" role="img" aria-label="Box plot of marks with quartiles, whiskers and outliers"></canvas>
     <div class="box-summary" id="boxSummary"></div>
+    <section class="timer-section glass-surface" aria-labelledby="timerTitle">
+      <h3 class="chart-title" id="timerTitle">Grading timer</h3>
+      <div class="timer-wrapper">
+        <div class="timer-clock">
+          <svg width="90" height="90" aria-hidden="true">
+            <circle cx="45" cy="45" r="40" stroke="#ede9fe" stroke-width="6" fill="none"/>
+            <circle id="timerArc" cx="45" cy="45" r="40"
+              stroke="#5b3cc4" stroke-width="6" fill="none"
+              stroke-linecap="round"
+              stroke-dasharray="251"
+              stroke-dashoffset="251"/>
+          </svg>
+          <div class="timer-text" id="timerText">00:00</div>
+        </div>
+      </div>
+    </section>
   </div>
   <div class="panel chart-panel">
     <h3 class="chart-title">Grade distribution</h3>
@@ -602,20 +626,6 @@ body.dark-mode #timerArc{stroke:#a78bfa}
       <button class="secondary" id="resetRanges">Reset Range</button>
       <button id="download" disabled>Finalize &amp; Download CSV</button>
       <button id="downloadPdf" disabled>Download Detailed Report (PDF)</button>
-    </div>
-
-    <div class="timer-wrapper">
-      <div class="timer-clock">
-        <svg width="90" height="90">
-          <circle cx="45" cy="45" r="40" stroke="#ede9fe" stroke-width="6" fill="none"/>
-          <circle id="timerArc" cx="45" cy="45" r="40"
-            stroke="#5b3cc4" stroke-width="6" fill="none"
-            stroke-linecap="round"
-            stroke-dasharray="251"
-            stroke-dashoffset="251"/>
-        </svg>
-        <div class="timer-text" id="timerText">00:00</div>
-      </div>
     </div>
 
     <div id="thankyou" class="notice"></div>
