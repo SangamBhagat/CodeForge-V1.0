@@ -193,8 +193,12 @@ body.dark-mode .icon-moon{display:none}
 }
 .controls > input,
 .controls > select,
+.instructor-control > input,
 .file-upload > input{box-sizing:border-box;min-width:0;width:100%}
+.instructor-control,
 .file-upload{min-width:0;display:flex;flex-direction:column;align-items:center}
+.instructor-control .upload-status{max-width:100%}
+#welcome:empty{display:none}
 #file[data-upload-state="success"]{color:#15803d;font-weight:600}
 #file::file-selector-button{color:#111827;font-weight:400}
 input,select{
@@ -254,7 +258,8 @@ button:disabled{
 .chart-panel{min-width:0}
 .spread-panel{display:flex;flex-direction:column}
 .spread-panel .box-summary{margin-bottom:14px}
-.grading-panel{grid-column:1/-1}
+.grading-panel,
+.student-search{grid-column:1/-1}
 
 .stats{
   display:grid;
@@ -291,7 +296,12 @@ button:disabled{
   font-size:12px;
   line-height:1.4;
 }
-.box-summary{text-align:center}
+.box-summary{
+  padding:10px 12px;
+  border-radius:10px;
+  text-align:center;
+}
+.box-summary:empty{display:none}
 
 .grade-summary{
   margin-top:8px;
@@ -307,9 +317,6 @@ button:disabled{
   transition:transform .25s ease, background-color .25s ease;
 }
 
-.student-search{
-  margin-bottom:14px;
-}
 .student-search label{
   display:block;
   margin-bottom:6px;
@@ -394,12 +401,14 @@ button:disabled{
   color:#065f46;
 }
 .actions{
-  display:flex;
-  flex-wrap:wrap;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
   gap:10px;
   margin-top:10px;
   align-items:center;
+  justify-items:center;
 }
+.actions button{max-width:100%}
 
 /* ===== ANIMATIONS ===== */
 .grade.lift{
@@ -529,6 +538,7 @@ body.dark-mode #timerArc{stroke:#a78bfa}
   .icon-button{width:36px;height:36px}
   .icon-button svg{width:19px;height:19px}
   .controls{grid-template-columns:1fr}
+  .actions{grid-template-columns:1fr}
   .guidance-dialog{top:92px;right:12px;width:calc(100vw - 24px)}
 }
 
@@ -582,15 +592,16 @@ body.dark-mode #timerArc{stroke:#a78bfa}
 </dialog>
 
 <div class="controls">
-  <input id="instructor" placeholder="Instructor name (mandatory)">
+  <div class="instructor-control">
+    <input id="instructor" placeholder="Instructor name (mandatory)">
+    <div id="welcome" class="upload-status" role="status" aria-live="polite"></div>
+  </div>
   <div class="file-upload">
     <input type="file" id="file" accept=".xlsx">
     <div id="uploadStatus" class="upload-status" role="status" aria-live="polite" hidden></div>
   </div>
   <select id="course"><option value="">Select a course to begin</option></select>
 </div>
-
-<div id="welcome" class="notice"></div>
 
 <div class="workspace">
   <!-- ANALYTICS -->
@@ -610,7 +621,7 @@ body.dark-mode #timerArc{stroke:#a78bfa}
   <div class="panel chart-panel spread-panel">
     <h3 class="chart-title">Marks spread</h3>
     <canvas class="chart-canvas" id="boxPlot" width="380" height="140" role="img" aria-label="Box plot of marks with quartiles, whiskers and outliers"></canvas>
-    <div class="box-summary" id="boxSummary"></div>
+    <div class="box-summary glass-surface" id="boxSummary"></div>
     <section class="timer-section glass-surface" aria-labelledby="timerTitle">
       <h3 class="chart-title" id="timerTitle">Grading timer</h3>
       <div class="timer-wrapper">
@@ -636,11 +647,7 @@ body.dark-mode #timerArc{stroke:#a78bfa}
 
   <!-- GRADING -->
   <div class="panel grading-panel">
-    <div class="student-search">
-      <label for="studentSearch">Student Search + Grade Preview</label>
-      <input id="studentSearch" type="search" placeholder="Search by BITS ID" autocomplete="off" disabled>
-      <div class="student-results" id="studentResults" aria-live="polite"></div>
-    </div>
+    <h3 class="chart-title">Grade Preview</h3>
     <div class="grade-grid" id="grades"></div>
     <div class="error" id="rangeError"></div>
 
@@ -652,6 +659,12 @@ body.dark-mode #timerArc{stroke:#a78bfa}
 
     <div id="thankyou" class="notice"></div>
   </div>
+
+  <section class="panel student-search" aria-labelledby="studentSearchLabel">
+    <label id="studentSearchLabel" for="studentSearch">Student Search</label>
+    <input id="studentSearch" type="search" placeholder="Search by BITS ID" autocomplete="off" disabled>
+    <div class="student-results" id="studentResults" aria-live="polite"></div>
+  </section>
 </div>
 
 </div>
@@ -937,8 +950,7 @@ course.onchange=()=>{
     clearAnalytics();
     return;
   }
-  welcome.innerText =
-  `Welcome ${instructor.value.toUpperCase()}. Please review and finalize grading.`;
+  updateWelcome();
 
   previousSummary = {};
   studentSearch.value = "";
@@ -948,7 +960,15 @@ updateAll();
 startTimer();
 };
 
+function updateWelcome(){
+  const name = instructor.value.trim();
+  welcome.innerText = course.value && name
+    ? `Welcome ${name.toUpperCase()}. Please review and finalize grading.`
+    : "";
+}
+
 instructor.addEventListener("input", () => {
+  updateWelcome();
   if (course.value) {
     updateAll();
   }
