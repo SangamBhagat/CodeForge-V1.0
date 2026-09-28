@@ -9,6 +9,7 @@
 
 <style>
 /* ===== BASE ===== */
+*{box-sizing:border-box}
 body{
   --glass-fill:rgba(255,255,255,.4);
   --glass-highlight:rgba(255,255,255,.7);
@@ -16,6 +17,9 @@ body{
   --glass-edge:rgba(255,255,255,.82);
   --glass-inner:rgba(255,255,255,.72);
   --glass-shadow:rgba(53,40,113,.16);
+  --field-fill:#fff;
+  --field-border:#d1d5db;
+  --field-ink:#111827;
   margin:0;
   font-family:Segoe UI, Arial, sans-serif;
   background:radial-gradient(circle at 12% 4%,#e9e1ff 0,transparent 38%),#f5f3ff;
@@ -72,6 +76,7 @@ body{
   filter:drop-shadow(0 2px 3px rgba(19,19,58,.18));
 }
 .header-center{
+  min-width:0;
   width:100%;
   justify-self:center;
   display:flex;
@@ -186,24 +191,43 @@ body.dark-mode .icon-moon{display:none}
 /* ===== CONTROLS ===== */
 .controls{
   display:grid;
-  grid-template-columns:1.2fr 1fr 1fr;
-  align-items:start;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  align-items:stretch;
   gap:12px;
   margin-bottom:12px;
 }
-.controls > input,
-.controls > select,
-.instructor-control > input,
-.file-upload > input{box-sizing:border-box;min-width:0;width:100%}
-.instructor-control,
-.file-upload{min-width:0;display:flex;flex-direction:column;align-items:center}
+.control-stack{min-width:0;display:flex;flex-direction:column;gap:5px}
+.control-label{font-size:12px;font-weight:600;color:#312e81;line-height:1.4}
+.required-marker{color:#dc2626;font-size:14px;line-height:0}
+.control-stack > input,
+.control-stack > select{min-width:0;width:100%;height:44px}
+.file-upload .upload-status{align-self:center;max-width:100%;margin-top:0}
 #file[data-upload-state="success"]{color:#15803d;font-weight:600}
-#file::file-selector-button{color:#111827;font-weight:400}
+#file{padding:4px;line-height:34px}
+#file::file-selector-button{
+  height:34px;
+  margin-right:8px;
+  padding:0 12px;
+  border:0;
+  border-radius:4px;
+  background:#5b3cc4;
+  color:#fff;
+  font:inherit;
+  font-weight:500;
+  cursor:pointer;
+}
+#file::file-selector-button:hover{background:#4c2ea9}
 input,select{
+  min-width:0;
   padding:8px 10px;
   border-radius:6px;
-  border:1px solid #d1d5db;
+  border:1px solid var(--field-border);
+  background:var(--field-fill);
+  color:var(--field-ink);
+  font-family:inherit;
+  font-size:14px;
 }
+input:focus-visible,select:focus-visible{outline:2px solid #8b5cf6;outline-offset:2px}
 
 .upload-status{
   box-sizing:border-box;
@@ -250,10 +274,12 @@ button:disabled{
 }
 
 .panel{
+  min-width:0;
   border-radius:12px;
   padding:12px;
 }
-.chart-panel{min-width:0}
+.chart-panel{display:flex;flex-direction:column;min-width:0}
+.chart-plot{min-width:0}
 .spread-panel{display:flex;flex-direction:column}
 .spread-panel .box-summary{margin-bottom:14px}
 .grading-panel,
@@ -333,6 +359,7 @@ button:disabled{
   margin-top:8px;
   font-size:13px;
 }
+.student-results:empty,.error:empty,.notice:empty{display:none}
 .student-result{
   display:grid;
   grid-template-columns:minmax(0,1fr) auto auto;
@@ -466,6 +493,9 @@ body.dark-mode{
   --glass-edge:rgba(196,181,253,.24);
   --glass-inner:rgba(221,214,254,.16);
   --glass-shadow:rgba(0,0,0,.34);
+  --field-fill:#111827;
+  --field-border:#4b5563;
+  --field-ink:#f9fafb;
   background:radial-gradient(circle at 12% 4%,#302456 0,transparent 38%),#111827;
   color:#e5e7eb;
 }
@@ -479,6 +509,7 @@ body.dark-mode .logo-glass img{
   filter:drop-shadow(0 2px 4px rgba(0,0,0,.42));
 }
 body.dark-mode .dialog-heading h2,
+body.dark-mode .control-label,
 body.dark-mode .student-search label,
 body.dark-mode .student-result strong{
   color:#ddd6fe;
@@ -502,7 +533,9 @@ body.dark-mode select{
 }
 body.dark-mode input::placeholder{color:#9ca3af}
 body.dark-mode #file[data-upload-state="success"]{color:#6ee7b7}
-body.dark-mode #file::file-selector-button{color:#f9fafb}
+body.dark-mode #file::file-selector-button{background:#7c3aed;color:#fff}
+body.dark-mode #file::file-selector-button:hover{background:#6d28d9}
+body.dark-mode .required-marker{color:#f87171}
 body.dark-mode .chart-title{color:#ddd6fe}
 body.dark-mode .chart-note,
 body.dark-mode .student-course,
@@ -528,24 +561,89 @@ body.dark-mode .upload-status[data-state="loading"]{background:#312e81;color:#dd
 body.dark-mode .timer-clock svg circle:first-child{stroke:#4b5563}
 body.dark-mode #timerArc{stroke:#a78bfa}
 
-@media (max-width:850px){
+/* Fit the console to common laptop viewports; chart drawings keep their ratio. */
+@media (min-width:1024px) and (min-height:600px){
+  .container{height:100vh;height:100svh;display:flex;flex-direction:column;gap:8px;padding:10px}
+  .app-header{flex:none;margin:0;padding:0}
+  .header-row{grid-template-columns:64px minmax(0,1fr) 96px;gap:12px;align-items:center}
+  .logo-glass{width:64px;height:64px}
+  .nav-glass{min-height:44px;padding:7px 16px}
+  .nav-glass h1{font-size:clamp(22px,2.2vw,32px);letter-spacing:.07em}
+  .brand-trapezoid{min-height:24px;padding:4px 24px;font-size:11px}
+  .header-actions{padding:0;gap:8px}
+  .controls{flex:none;gap:10px;margin:0}
+  .control-stack{gap:4px}
+  .control-stack > input,.control-stack > select{height:38px}
+  #file{line-height:28px}
+  #file::file-selector-button{height:28px}
+  .upload-status{padding:5px 8px;font-size:11px;line-height:1.3}
+  .workspace{flex:1;min-height:0;grid-template-rows:minmax(0,1fr) auto auto;gap:8px}
+  .panel{padding:8px}
+  .chart-panel{min-height:0}
+  .chart-title{margin:0 0 4px;font-size:12px;flex:none}
+  .chart-plot{position:relative;flex:1;min-height:0}
+  .chart-canvas{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:contain}
+  .chart-note{font-size:10px;line-height:1.3;margin-top:4px}
+  .stats{gap:4px;margin-top:5px;grid-template-columns:repeat(5,minmax(0,1fr))}
+  .stat{padding:4px;font-size:10px}
+  .spread-panel .box-summary{margin:4px auto 6px;padding:4px 8px;font-size:10px}
+  .timer-section{display:flex;align-items:center;justify-content:center;gap:10px;padding:5px 8px;flex:none}
+  .timer-section .chart-title{margin:0}
+  .timer-wrapper{margin:0}
+  .timer-clock,.timer-clock svg{width:52px;height:52px}
+  .timer-text{font-size:11px}
+  .grade-summary{gap:4px;margin-top:5px;font-size:10px}
+  .grade-summary span{padding:3px 6px}
+  .grade-grid{grid-template-columns:repeat(8,minmax(0,1fr));gap:7px}
+  .grade{min-width:0;padding:5px;font-size:12px}
+  .range-control{margin-top:4px;font-size:10px}
+  .range-stepper{grid-template-columns:24px minmax(0,1fr) 24px;margin-top:3px}
+  .range-stepper input,.range-stepper button{height:24px;padding:0;font-size:12px;line-height:24px}
+  .actions{margin-top:7px;gap:8px}
+  .actions button{padding:7px 12px;font-size:12px}
+  .error,.notice{margin-top:4px;font-size:11px}
+  .student-search{display:grid;grid-template-columns:minmax(220px,1fr) minmax(0,2fr);column-gap:16px}
+  .student-search label{grid-column:1;grid-row:1;margin-bottom:4px;font-size:12px}
+  .student-search input{grid-column:1;grid-row:2;height:32px;padding:5px 9px;font-size:12px}
+  .student-results{grid-column:2;grid-row:1/3;max-height:64px;overflow-y:auto;overscroll-behavior:contain;margin:0;font-size:11px}
+  .student-result{padding:5px 8px}
+  .student-course{font-size:10px;margin-top:2px}
+}
+
+@media (max-width:1023px){
+  .app-header{margin-bottom:18px}
   .workspace{grid-template-columns:1fr}
-  .controls{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .chart-canvas{max-width:400px}
+  .chart-title:not(:first-child){margin-top:4px}
+  .grade-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
   .upload-status{max-width:100%}
 }
 @media (max-width:620px){
-  .container{padding:12px}
-  .header-row{grid-template-columns:64px minmax(0,1fr) 76px;gap:8px}
-  .logo-glass{width:62px;height:62px}
-  .nav-glass{min-height:60px;padding:10px 12px}
-  .nav-glass h1{font-size:clamp(13px,3.5vw,18px);letter-spacing:.035em}
-  .brand-trapezoid{width:100%;min-height:30px;padding:7px 12px;font-size:10px;white-space:nowrap}
-  .header-actions{gap:4px;padding-top:10px}
-  .icon-button{width:36px;height:36px}
-  .icon-button svg{width:19px;height:19px}
+  .container{padding:10px}
+  .header-row{grid-template-columns:52px minmax(0,1fr);gap:8px;align-items:center}
+  .logo-glass{width:52px;height:52px}
+  .nav-glass{min-height:52px;padding:8px 12px}
+  .nav-glass h1{font-size:clamp(15px,4vw,22px);letter-spacing:.035em;line-height:1.2;overflow-wrap:anywhere}
+  .brand-trapezoid{width:min(100%,240px);min-height:28px;padding:6px 14px;font-size:10px}
+  .header-actions{grid-column:1/-1;justify-self:center;gap:8px;padding-top:0}
   .controls{grid-template-columns:1fr}
+  input,select{font-size:16px}
+  .student-search input{height:44px}
+  .grade-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .grade{min-width:0}
+  .range-stepper{grid-template-columns:40px minmax(0,1fr) 40px}
+  .range-stepper button,.range-stepper input{height:44px;line-height:44px}
+  .range-stepper input{padding:0;font-size:16px}
+  .actions button{min-height:44px;flex-basis:100%}
+  .student-result{grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;padding-inline:0}
+  .student-result strong{grid-column:2;grid-row:2;font-size:12px}
+  .student-identity{grid-row:1/3}
+  .student-course{font-size:11px}
+  .box-summary{font-size:11px}
+  .timer-section{margin-top:8px}
   .guidance-dialog{top:92px;right:12px;width:calc(100vw - 24px)}
 }
+.guidance-dialog{max-height:calc(100vh - 120px);max-height:calc(100svh - 120px);overflow-y:auto}
 
 @media (prefers-reduced-motion: reduce){
   *{animation:none!important;transition:none!important;}
@@ -597,21 +695,28 @@ body.dark-mode #timerArc{stroke:#a78bfa}
 </dialog>
 
 <div class="controls">
-  <div class="instructor-control">
-    <input id="instructor" placeholder="Instructor name (mandatory)">
+  <div class="control-stack instructor-control">
+    <label class="control-label" for="instructor">Instructor name <sup class="required-marker" aria-hidden="true">*</sup> (mandatory)</label>
+    <input id="instructor" placeholder="Enter instructor name" required aria-required="true">
   </div>
-  <div class="file-upload">
+  <div class="control-stack file-upload">
+    <label class="control-label" for="file">Marks file</label>
     <input type="file" id="file" accept=".xlsx">
     <div id="uploadStatus" class="upload-status" role="status" aria-live="polite" hidden></div>
   </div>
-  <select id="course"><option value="">Select a course to begin</option></select>
+  <div class="control-stack course-control">
+    <label class="control-label" for="course">Course</label>
+    <select id="course"><option value="">Select a course to begin</option></select>
+  </div>
 </div>
 
 <div class="workspace">
   <!-- ANALYTICS -->
   <div class="panel chart-panel">
     <h3 class="chart-title">Marks distribution</h3>
-    <canvas class="chart-canvas" id="hist" width="380" height="240" role="img" aria-label="Histogram of marks with a fitted normal curve"></canvas>
+    <div class="chart-plot">
+      <canvas class="chart-canvas" id="hist" width="380" height="240" role="img" aria-label="Histogram of marks with a fitted normal curve"></canvas>
+    </div>
     <p class="chart-note">Bars show students in each 10-mark band; the line is a normal curve fitted to the marks.</p>
 
     <div class="stats">
@@ -624,13 +729,15 @@ body.dark-mode #timerArc{stroke:#a78bfa}
   </div>
   <div class="panel chart-panel spread-panel">
     <h3 class="chart-title">Marks spread</h3>
-    <canvas class="chart-canvas" id="boxPlot" width="380" height="140" role="img" aria-label="Box plot of marks with quartiles, whiskers and outliers"></canvas>
+    <div class="chart-plot">
+      <canvas class="chart-canvas" id="boxPlot" width="380" height="140" role="img" aria-label="Box plot of marks with quartiles, whiskers and outliers"></canvas>
+    </div>
     <div class="box-summary glass-surface" id="boxSummary"></div>
     <section class="timer-section glass-surface" aria-labelledby="timerTitle">
       <h3 class="chart-title" id="timerTitle">Grading timer</h3>
       <div class="timer-wrapper">
         <div class="timer-clock">
-          <svg width="90" height="90" aria-hidden="true">
+          <svg width="90" height="90" viewBox="0 0 90 90" aria-hidden="true">
             <circle cx="45" cy="45" r="40" stroke="#ede9fe" stroke-width="6" fill="none"/>
             <circle id="timerArc" cx="45" cy="45" r="40"
               stroke="#5b3cc4" stroke-width="6" fill="none"
@@ -645,7 +752,9 @@ body.dark-mode #timerArc{stroke:#a78bfa}
   </div>
   <div class="panel chart-panel">
     <h3 class="chart-title">Grade distribution</h3>
-    <canvas class="chart-canvas" id="gradeDonut" width="380" height="220" role="img" aria-label="Donut chart of grade distribution"></canvas>
+    <div class="chart-plot">
+      <canvas class="chart-canvas" id="gradeDonut" width="380" height="220" role="img" aria-label="Donut chart of grade distribution"></canvas>
+    </div>
     <div class="grade-summary" id="gradeSummary"></div>
   </div>
 
