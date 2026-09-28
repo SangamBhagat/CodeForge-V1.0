@@ -197,8 +197,6 @@ body.dark-mode .icon-moon{display:none}
 .file-upload > input{box-sizing:border-box;min-width:0;width:100%}
 .instructor-control,
 .file-upload{min-width:0;display:flex;flex-direction:column;align-items:center}
-.instructor-control .upload-status{max-width:100%}
-#welcome:empty{display:none}
 #file[data-upload-state="success"]{color:#15803d;font-weight:600}
 #file::file-selector-button{color:#111827;font-weight:400}
 input,select{
@@ -338,9 +336,12 @@ button:disabled{
   padding:8px 10px;
   border-bottom:1px solid #e5e7eb;
 }
-.student-result span:first-child{
+.student-identity{
+  min-width:0;
   overflow-wrap:anywhere;
 }
+.student-identity span{display:block}
+.student-course{margin-top:3px;color:#4b5563;font-size:12px}
 .student-result strong{
   color:#312e81;
 }
@@ -401,12 +402,12 @@ button:disabled{
   color:#065f46;
 }
 .actions{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
+  display:flex;
+  flex-wrap:wrap;
   gap:10px;
   margin-top:10px;
   align-items:center;
-  justify-items:center;
+  justify-content:center;
 }
 .actions button{max-width:100%}
 
@@ -500,6 +501,7 @@ body.dark-mode #file[data-upload-state="success"]{color:#6ee7b7}
 body.dark-mode #file::file-selector-button{color:#f9fafb}
 body.dark-mode .chart-title{color:#ddd6fe}
 body.dark-mode .chart-note,
+body.dark-mode .student-course,
 body.dark-mode .box-summary{color:#d1d5db}
 body.dark-mode .grade-summary span.pulse{background:#6d28d9}
 body.dark-mode .student-result{border-color:#4b5563}
@@ -538,7 +540,6 @@ body.dark-mode #timerArc{stroke:#a78bfa}
   .icon-button{width:36px;height:36px}
   .icon-button svg{width:19px;height:19px}
   .controls{grid-template-columns:1fr}
-  .actions{grid-template-columns:1fr}
   .guidance-dialog{top:92px;right:12px;width:calc(100vw - 24px)}
 }
 
@@ -594,7 +595,6 @@ body.dark-mode #timerArc{stroke:#a78bfa}
 <div class="controls">
   <div class="instructor-control">
     <input id="instructor" placeholder="Instructor name (mandatory)">
-    <div id="welcome" class="upload-status" role="status" aria-live="polite"></div>
   </div>
   <div class="file-upload">
     <input type="file" id="file" accept=".xlsx">
@@ -778,7 +778,6 @@ file.onchange = e => {
 
 grades.innerHTML = "";
  gradeSummary.innerHTML = "";
- welcome.innerText = "";
  thankyou.innerText = "";
  studentCount.textContent = "—";
  studentSearch.value = "";
@@ -910,6 +909,8 @@ data = uniqueRows;
         `Uploaded successfully: ${data.length} unique student record${data.length === 1 ? "" : "s"} across ${uniqueCourses.length} course${uniqueCourses.length === 1 ? "" : "s"}.` +
         (duplicateCount ? ` ${duplicateCount} duplicate row${duplicateCount === 1 ? "" : "s"} ignored.` : "")
       );
+      studentSearch.disabled = false;
+      renderStudentSearch();
 
     } catch (error) {
       alert("Unable to read the Excel file.");
@@ -934,41 +935,30 @@ course.onchange=()=>{
   timerText.innerText = "00:00";
   grades.innerHTML = "";
    gradeSummary.innerHTML = "";
-   welcome.innerText = "";
    studentCount.textContent = "—";
-   studentSearch.value = "";
-   studentSearch.disabled = true;
-    studentResults.textContent = "";
+   studentSearch.disabled = data.length === 0;
     clearAnalytics();
     download.disabled = true;
     downloadPdf.disabled = true;
+    renderStudentSearch();
   return;
 }
   if(!instructor.value.trim()){
     alert("Please enter instructor name first");
     course.value="";
     clearAnalytics();
+    renderStudentSearch();
     return;
   }
-  updateWelcome();
 
   previousSummary = {};
-  studentSearch.value = "";
   studentSearch.disabled = false;
   buildGradeUI();
 updateAll();
 startTimer();
 };
 
-function updateWelcome(){
-  const name = instructor.value.trim();
-  welcome.innerText = course.value && name
-    ? `Welcome ${name.toUpperCase()}. Please review and finalize grading.`
-    : "";
-}
-
 instructor.addEventListener("input", () => {
-  updateWelcome();
   if (course.value) {
     updateAll();
   }
@@ -1130,39 +1120,49 @@ function gradeForMark(mark){
 function renderStudentSearch(){
   studentResults.replaceChildren();
   const query = studentSearch.value.trim().toLowerCase();
-  if(!course.value || !query) return;
+  if(!data.length) return;
 
   const matches = data.filter(row =>
-    row.Course === course.value &&
+    (!course.value || row.Course === course.value) &&
     row["BITS ID"].toLowerCase().includes(query)
   );
 
   if(matches.length === 0){
-    studentResults.textContent = "No matching student in this course.";
+    studentResults.textContent = course.value
+      ? "No matching student in this course."
+      : "No matching student in the uploaded records.";
     return;
   }
 
-  const rangesValid = !validateRanges();
+  const rangesValid = course.value && !validateRanges();
   matches.slice(0,10).forEach(row => {
     const result = document.createElement("div");
     result.className = "student-result";
 
+    const identity = document.createElement("div");
+    identity.className = "student-identity";
     const id = document.createElement("span");
     id.textContent = row["BITS ID"];
+    const courseName = document.createElement("span");
+    courseName.className = "student-course";
+    courseName.textContent = row.Course;
+    identity.append(id, courseName);
     const marks = document.createElement("span");
     marks.textContent = `Marks: ${row["Total Marks"]}`;
     const grade = document.createElement("strong");
-    grade.textContent = rangesValid
-      ? `Grade: ${gradeForMark(row["Total Marks"])}`
-      : "Grade: fix ranges";
+    grade.textContent = !course.value
+      ? "Grade: —"
+      : rangesValid
+        ? `Grade: ${gradeForMark(row["Total Marks"])}`
+        : "Grade: fix ranges";
 
-    result.append(id, marks, grade);
+    result.append(identity, marks, grade);
     studentResults.appendChild(result);
   });
 
   if(matches.length > 10){
     const more = document.createElement("div");
-    more.textContent = `Showing 10 of ${matches.length} matches. Enter more of the BITS ID to narrow the search.`;
+    more.textContent = `Showing 10 of ${matches.length} student records. Search by BITS ID to narrow the results.`;
     studentResults.appendChild(more);
   }
 }
