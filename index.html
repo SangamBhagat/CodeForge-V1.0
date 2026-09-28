@@ -187,11 +187,16 @@ body.dark-mode .icon-moon{display:none}
 .controls{
   display:grid;
   grid-template-columns:1.2fr 1fr 1fr;
+  align-items:start;
   gap:12px;
-  margin-bottom:6px;
+  margin-bottom:12px;
 }
 .controls > input,
-.controls > select{box-sizing:border-box;min-width:0;width:100%}
+.controls > select,
+.file-upload > input{box-sizing:border-box;min-width:0;width:100%}
+.file-upload{min-width:0;display:flex;flex-direction:column;align-items:center}
+#file[data-upload-state="success"]{color:#15803d;font-weight:600}
+#file::file-selector-button{color:#111827;font-weight:400}
 input,select{
   padding:8px 10px;
   border-radius:6px;
@@ -199,13 +204,19 @@ input,select{
 }
 
 .upload-status{
-  margin:8px 0 12px;
+  box-sizing:border-box;
+  width:max-content;
+  max-width:min(580px,calc(100vw - 32px));
+  margin:8px 0 0;
   padding:9px 12px;
-  border-radius:6px;
+  border-radius:10px;
   background:#ecfdf5;
   color:#065f46;
   font-size:13px;
+  text-align:center;
+  line-height:1.45;
 }
+.upload-status[data-state="loading"]{background:#ede9fe;color:#5b3cc4}
 .upload-status[data-state="error"]{
   background:#fef2f2;
   color:#b91c1c;
@@ -270,6 +281,9 @@ button:disabled{
   height:auto;
   margin-inline:auto;
 }
+#hist{aspect-ratio:380/240}
+#boxPlot{aspect-ratio:380/140}
+#gradeDonut{aspect-ratio:380/220}
 .chart-note,
 .box-summary{
   margin:6px 0 0;
@@ -277,11 +291,13 @@ button:disabled{
   font-size:12px;
   line-height:1.4;
 }
+.box-summary{text-align:center}
 
 .grade-summary{
   margin-top:8px;
   display:flex;
   flex-wrap:wrap;
+  justify-content:center;
   gap:6px;
   font-size:12px;
 }
@@ -471,6 +487,8 @@ body.dark-mode select{
   color-scheme:dark;
 }
 body.dark-mode input::placeholder{color:#9ca3af}
+body.dark-mode #file[data-upload-state="success"]{color:#6ee7b7}
+body.dark-mode #file::file-selector-button{color:#f9fafb}
 body.dark-mode .chart-title{color:#ddd6fe}
 body.dark-mode .chart-note,
 body.dark-mode .box-summary{color:#d1d5db}
@@ -491,12 +509,14 @@ body.dark-mode .upload-status[data-state="error"]{
   background:#7f1d1d;
   color:#fee2e2;
 }
+body.dark-mode .upload-status[data-state="loading"]{background:#312e81;color:#ddd6fe}
 body.dark-mode .timer-clock svg circle:first-child{stroke:#4b5563}
 body.dark-mode #timerArc{stroke:#a78bfa}
 
 @media (max-width:850px){
   .workspace{grid-template-columns:1fr}
   .controls{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .upload-status{max-width:100%}
 }
 @media (max-width:620px){
   .container{padding:12px}
@@ -563,11 +583,13 @@ body.dark-mode #timerArc{stroke:#a78bfa}
 
 <div class="controls">
   <input id="instructor" placeholder="Instructor name (mandatory)">
-  <input type="file" id="file" accept=".xlsx">
+  <div class="file-upload">
+    <input type="file" id="file" accept=".xlsx">
+    <div id="uploadStatus" class="upload-status" role="status" aria-live="polite" hidden></div>
+  </div>
   <select id="course"><option value="">Select a course to begin</option></select>
 </div>
 
-<div id="uploadStatus" class="upload-status" role="status" aria-live="polite" hidden></div>
 <div id="welcome" class="notice"></div>
 
 <div class="workspace">
@@ -685,11 +707,17 @@ const DEFAULTS={
 let data=[];
 let previousSummary={};
 let finalized=false;
+const CHART_SIZES = new Map([
+  [hist, {width:380, height:240}],
+  [boxPlot, {width:380, height:140}],
+  [gradeDonut, {width:380, height:220}]
+]);
 
 function setUploadStatus(message, state="success"){
   uploadStatus.textContent = message;
   uploadStatus.dataset.state = state;
   uploadStatus.hidden = !message;
+  file.dataset.uploadState = message ? state : "idle";
 }
 
 function setTheme(dark, save=false){
@@ -731,7 +759,7 @@ file.onchange = e => {
 
   if (!selectedFile) return;
   data = [];
-  setUploadStatus("Reading marks file...");
+  setUploadStatus("Reading marks file...", "loading");
   course.innerHTML =
   '<option value="">Select a course to begin</option>';
 
@@ -1148,6 +1176,38 @@ else
 
 const GRADE_COLORS = ["#5b3cc4","#8b5cf6","#2563eb","#0891b2","#059669","#d97706","#ea580c","#dc2626"];
 
+function prepareChart(canvas){
+  const {width, height} = CHART_SIZES.get(canvas);
+  const displayWidth = canvas.getBoundingClientRect().width || width;
+  const density = Math.max(2, Math.min(window.devicePixelRatio || 1, 3));
+  const pixelWidth = Math.round(displayWidth * density);
+  const pixelHeight = Math.round(pixelWidth * height / width);
+  if(canvas.width !== pixelWidth || canvas.height !== pixelHeight){
+    canvas.width = pixelWidth;
+    canvas.height = pixelHeight;
+  }
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(pixelWidth / width, 0, 0, pixelHeight / height, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  return {ctx, width, height};
+}
+
+function roundedChartRect(ctx, x, y, width, height, radius){
+  const r = Math.max(0, Math.min(radius, width / 2, height / 2));
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + width - r, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+  ctx.lineTo(x + width, y + height - r);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+  ctx.lineTo(x + r, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
 function getCourseMarks(){
   return data.filter(row => row.Course === course.value)
     .map(row => row["Total Marks"]);
@@ -1193,52 +1253,102 @@ function getGradeCounts(){
 
 function clearAnalytics(){
   for(const canvas of [hist, boxPlot, gradeDonut]){
-    canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+    const ctx = canvas.getContext("2d");
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
   }
   for(const element of [studentCount, min, max, avg, med]) element.textContent = "—";
   boxSummary.textContent = "";
 }
 
 function drawHistogram(){
-  paintHistogram(hist.getContext("2d"), getCourseMarks(),
-    document.body.classList.contains("dark-mode"), hist.width, hist.height);
+  const {ctx, width, height} = prepareChart(hist);
+  paintHistogram(ctx, getCourseMarks(),
+    document.body.classList.contains("dark-mode"), width, height);
 }
 
 function paintHistogram(ctx, marks, dark, width, height){
   ctx.clearRect(0, 0, width, height);
   if(!marks.length) return;
+  ctx.save();
   const analysis = getMarkAnalysis(marks);
   const bins = Array(10).fill(0);
   marks.forEach(mark => bins[Math.min(9, Math.floor(mark / 10))]++);
-  const left = 30, right = width - 12, top = 24, bottom = height - 30;
+  const left = 40, right = width - 16, top = 34, bottom = height - 38;
   const step = (right - left) / 10;
   const normalPeak = analysis.stdDev
     ? marks.length * 10 / (analysis.stdDev * Math.sqrt(2 * Math.PI))
     : 0;
-  const scale = Math.max(1, ...bins, normalPeak);
-  ctx.strokeStyle = dark ? "#9ca3af" : "#9ca3af";
+  const peak = Math.max(1, ...bins, normalPeak);
+  const magnitude = 10 ** Math.floor(Math.log10(peak / 4));
+  const normalized = peak / 4 / magnitude;
+  const tickStep = Math.max(1, (normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10) * magnitude);
+  const scale = Math.ceil(peak / tickStep) * tickStep;
+  const ink = dark ? "#e5e7eb" : "#334155";
+  const curveColor = dark ? "#fda4af" : "#e11d48";
+  ctx.font = "11px Segoe UI, Arial";
+  ctx.lineWidth = 1;
+  ctx.textAlign = "right";
+  ctx.textBaseline = "middle";
+  for(let count = 0; count <= scale; count += tickStep){
+    const y = bottom - count / scale * (bottom - top);
+    ctx.strokeStyle = dark ? "rgba(203,213,225,.14)" : "rgba(100,116,139,.17)";
+    ctx.beginPath();
+    ctx.moveTo(left, y);
+    ctx.lineTo(right, y);
+    ctx.stroke();
+    ctx.fillStyle = ink;
+    ctx.fillText(String(count), left - 8, y);
+  }
+  ctx.strokeStyle = dark ? "#94a3b8" : "#94a3b8";
   ctx.beginPath();
+  ctx.moveTo(left, top);
+  ctx.lineTo(left, bottom);
   ctx.moveTo(left, bottom);
   ctx.lineTo(right, bottom);
   ctx.stroke();
+  const barFill = ctx.createLinearGradient(0, top, 0, bottom);
+  barFill.addColorStop(0, dark ? "#c4b5fd" : "#a78bfa");
+  barFill.addColorStop(1, dark ? "#8b5cf6" : "#5b3cc4");
+  ctx.textAlign = "center";
+  ctx.textBaseline = "alphabetic";
   bins.forEach((count, index) => {
+    if(!count) return;
     const barHeight = count / scale * (bottom - top);
-    ctx.fillStyle = dark ? "#a78bfa" : "#5b3cc4";
-    ctx.fillRect(left + index * step + 2, bottom - barHeight, step - 5, barHeight);
+    ctx.fillStyle = barFill;
+    roundedChartRect(ctx, left + index * step + 3, bottom - barHeight, step - 6, barHeight, 3);
+    ctx.fill();
+    ctx.fillStyle = ink;
+    ctx.fillText(String(count), left + (index + .5) * step, Math.max(top + 10, bottom - barHeight - 5));
   });
-  ctx.fillStyle = dark ? "#e5e7eb" : "#111827";
-  ctx.font = "11px Segoe UI, Arial";
+  ctx.fillStyle = ink;
   for(let mark=0;mark<=100;mark+=20){
     const x = left + mark / 100 * (right - left);
-    ctx.fillText(String(mark), x - (mark === 100 ? 16 : 7), height - 10);
+    ctx.fillText(String(mark), x, bottom + 17);
   }
-  ctx.fillText(String(Math.ceil(scale)), 3, top + 4);
+  ctx.fillText("Marks", (left + right) / 2, height - 3);
+  ctx.fillStyle = dark ? "#a78bfa" : "#7c3aed";
+  roundedChartRect(ctx, left, 9, 10, 10, 2);
+  ctx.fill();
+  ctx.fillStyle = ink;
+  ctx.textAlign = "left";
+  ctx.fillText("Students", left + 16, 18);
 
   if(analysis.stdDev > 0){
-    ctx.strokeStyle = dark ? "#f87171" : "#dc2626";
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = curveColor;
+    ctx.lineWidth = 2.4;
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
     ctx.beginPath();
-    for(let mark=0;mark<=100;mark++){
+    ctx.moveTo(left + 98, 14);
+    ctx.lineTo(left + 116, 14);
+    ctx.stroke();
+    ctx.fillStyle = ink;
+    ctx.fillText("Normal fit", left + 123, 18);
+    ctx.beginPath();
+    for(let mark=0;mark<=100;mark+=.25){
       const density = Math.exp(-0.5 * ((mark - analysis.mean) / analysis.stdDev) ** 2) /
         (analysis.stdDev * Math.sqrt(2 * Math.PI));
       const expected = density * marks.length * 10;
@@ -1248,12 +1358,14 @@ function paintHistogram(ctx, marks, dark, width, height){
     }
     ctx.stroke();
   }
+  ctx.restore();
 }
 
 function drawBoxPlot(){
   const analysis = getMarkAnalysis(getCourseMarks());
-  paintBoxPlot(boxPlot.getContext("2d"), analysis,
-    document.body.classList.contains("dark-mode"), boxPlot.width, boxPlot.height);
+  const {ctx, width, height} = prepareChart(boxPlot);
+  paintBoxPlot(ctx, analysis,
+    document.body.classList.contains("dark-mode"), width, height);
   boxSummary.textContent = analysis
     ? `Q1: ${analysis.q1}  |  Q3: ${analysis.q3}  |  IQR: ${analysis.iqr}  |  Outliers: ${analysis.outliers.length}`
     : "";
@@ -1262,12 +1374,22 @@ function drawBoxPlot(){
 function paintBoxPlot(ctx, analysis, dark, width, height){
   ctx.clearRect(0, 0, width, height);
   if(!analysis) return;
+  ctx.save();
   const left = 30, right = width - 20, center = height * 0.44;
-  const axisY = height - 24;
+  const axisY = height - 29;
   const x = mark => left + mark / 100 * (right - left);
-  const ink = dark ? "#e5e7eb" : "#111827";
-  ctx.strokeStyle = ink;
-  ctx.lineWidth = 1.5;
+  const ink = dark ? "#e5e7eb" : "#334155";
+  const accent = dark ? "#c4b5fd" : "#7c3aed";
+  ctx.lineWidth = 1;
+  for(let mark=0;mark<=100;mark+=25){
+    ctx.strokeStyle = dark ? "rgba(203,213,225,.14)" : "rgba(100,116,139,.17)";
+    ctx.beginPath();
+    ctx.moveTo(x(mark), 18);
+    ctx.lineTo(x(mark), axisY);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(x(analysis.lowerWhisker), center);
   ctx.lineTo(x(analysis.upperWhisker), center);
@@ -1277,23 +1399,35 @@ function paintBoxPlot(ctx, analysis, dark, width, height){
   }
   ctx.stroke();
 
-  ctx.fillStyle = dark ? "#8b5cf6" : "#ddd6fe";
-  ctx.fillRect(x(analysis.q1), center - 22,
-    Math.max(2, x(analysis.q3) - x(analysis.q1)), 44);
-  ctx.strokeRect(x(analysis.q1), center - 22,
-    Math.max(2, x(analysis.q3) - x(analysis.q1)), 44);
-  ctx.strokeStyle = dark ? "#f9fafb" : "#5b3cc4";
+  const boxFill = ctx.createLinearGradient(0, center - 22, 0, center + 22);
+  boxFill.addColorStop(0, dark ? "#8b5cf6" : "#ede9fe");
+  boxFill.addColorStop(1, dark ? "#6d28d9" : "#c4b5fd");
+  ctx.fillStyle = boxFill;
+  roundedChartRect(ctx, x(analysis.q1), center - 22,
+    Math.max(2, x(analysis.q3) - x(analysis.q1)), 44, 4);
+  ctx.fill();
+  ctx.stroke();
+  ctx.strokeStyle = dark ? "#f9fafb" : "#5b21b6";
   ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.moveTo(x(analysis.median), center - 22);
   ctx.lineTo(x(analysis.median), center + 22);
   ctx.stroke();
+  ctx.fillStyle = ink;
+  ctx.font = "11px Segoe UI, Arial";
+  ctx.textAlign = "center";
+  const medianLabel = `Median ${analysis.median}`;
+  const labelHalfWidth = ctx.measureText(medianLabel).width / 2;
+  ctx.fillText(medianLabel, Math.max(left + labelHalfWidth, Math.min(right - labelHalfWidth, x(analysis.median))), center - 31);
 
-  ctx.fillStyle = dark ? "#f87171" : "#dc2626";
+  ctx.fillStyle = dark ? "#fda4af" : "#e11d48";
+  ctx.strokeStyle = dark ? "#1e293b" : "#fff";
+  ctx.lineWidth = 1.5;
   analysis.outliers.forEach((mark,index) => {
     ctx.beginPath();
-    ctx.arc(x(mark), center + (index % 3 - 1) * 7, 3, 0, Math.PI * 2);
+    ctx.arc(x(mark), center + (index % 3 - 1) * 7, 3.8, 0, Math.PI * 2);
     ctx.fill();
+    ctx.stroke();
   });
 
   ctx.strokeStyle = dark ? "#9ca3af" : "#9ca3af";
@@ -1305,56 +1439,77 @@ function paintBoxPlot(ctx, analysis, dark, width, height){
   ctx.fillStyle = ink;
   ctx.font = "11px Segoe UI, Arial";
   for(let mark=0;mark<=100;mark+=25){
-    ctx.fillText(String(mark), x(mark) - (mark === 100 ? 16 : 7), height - 7);
+    ctx.fillText(String(mark), x(mark), axisY + 15);
   }
+  ctx.fillText("Marks", (left + right) / 2, height - 1);
+  ctx.restore();
 }
 
 function drawDonutChart(){
-  const ctx = gradeDonut.getContext("2d");
+  const {ctx, width, height} = prepareChart(gradeDonut);
   const marks = getCourseMarks();
   if(!marks.length || validateRanges()){
-    ctx.clearRect(0, 0, gradeDonut.width, gradeDonut.height);
+    ctx.clearRect(0, 0, width, height);
     return;
   }
   paintDonut(ctx, getGradeCounts(),
-    document.body.classList.contains("dark-mode"), gradeDonut.width, gradeDonut.height);
+    document.body.classList.contains("dark-mode"), width, height);
 }
 
 function paintDonut(ctx, counts, dark, width, height){
   ctx.clearRect(0, 0, width, height);
   const total = Object.values(counts).reduce((sum,count) => sum + count, 0);
   if(!total) return;
-  const cx = 105, cy = height / 2, radius = Math.min(78, height * 0.38);
+  ctx.save();
+  const cx = width * .28, cy = height / 2, radius = Math.min(width * .205, height * .36);
+  const thickness = radius * .38;
   let start = -Math.PI / 2;
   GRADES.forEach((grade,index) => {
     const angle = counts[grade] / total * Math.PI * 2;
     if(!angle) return;
+    const gap = angle === Math.PI * 2 ? 0 : Math.min(.045, angle * .12);
     ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.arc(cx, cy, radius, start, start + angle);
-    ctx.closePath();
-    ctx.fillStyle = GRADE_COLORS[index];
-    ctx.fill();
+    ctx.arc(cx, cy, radius - thickness / 2, start + gap / 2, start + angle - gap / 2);
+    ctx.lineWidth = thickness;
+    ctx.strokeStyle = GRADE_COLORS[index];
+    ctx.stroke();
     start += angle;
   });
-  ctx.beginPath();
-  ctx.arc(cx, cy, radius * 0.55, 0, Math.PI * 2);
-  ctx.fillStyle = dark ? "#1f2937" : "#ffffff";
-  ctx.fill();
   ctx.fillStyle = dark ? "#f9fafb" : "#111827";
-  ctx.font = "bold 20px Segoe UI, Arial";
+  ctx.font = "bold 23px Segoe UI, Arial";
   ctx.textAlign = "center";
-  ctx.fillText(String(total), cx, cy + 6);
-  ctx.textAlign = "left";
+  ctx.fillText(String(total), cx, cy + 1);
   ctx.font = "11px Segoe UI, Arial";
+  ctx.fillStyle = dark ? "#cbd5e1" : "#64748b";
+  ctx.fillText("students", cx, cy + 18);
+  ctx.textAlign = "left";
+  ctx.font = "12px Segoe UI, Arial";
+  const legendX = width * .56;
   GRADES.forEach((grade,index) => {
-    const y = 28 + index * 21;
+    const y = cy - (GRADES.length - 1) * 11.5 + index * 23;
     ctx.fillStyle = GRADE_COLORS[index];
-    ctx.fillRect(206, y - 9, 11, 11);
+    roundedChartRect(ctx, legendX, y - 9, 10, 10, 3);
+    ctx.fill();
     ctx.fillStyle = dark ? "#e5e7eb" : "#111827";
-    ctx.fillText(`${grade}: ${counts[grade]} (${(counts[grade] / total * 100).toFixed(1)}%)`, 225, y);
+    ctx.fillText(`${grade}: ${counts[grade]} (${(counts[grade] / total * 100).toFixed(1)}%)`, legendX + 18, y);
+  });
+  ctx.restore();
+}
+
+let chartResizeFrame;
+function scheduleChartRedraw(){
+  cancelAnimationFrame(chartResizeFrame);
+  chartResizeFrame = requestAnimationFrame(() => {
+    drawHistogram();
+    drawBoxPlot();
+    drawDonutChart();
   });
 }
+if("ResizeObserver" in window){
+  const chartObserver = new ResizeObserver(scheduleChartRedraw);
+  for(const canvas of CHART_SIZES.keys()) chartObserver.observe(canvas);
+}
+window.addEventListener("resize", scheduleChartRedraw);
 
 function computeStats(){
   const analysis = getMarkAnalysis(getCourseMarks());
@@ -1396,10 +1551,10 @@ function csvEscape(value){
 
 function chartImage(width, height, paint){
   const canvas = document.createElement("canvas");
-  canvas.width = width * 2;
-  canvas.height = height * 2;
+  canvas.width = width * 3;
+  canvas.height = height * 3;
   const ctx = canvas.getContext("2d");
-  ctx.scale(2, 2);
+  ctx.scale(3, 3);
   paint(ctx, width, height);
   return canvas.toDataURL("image/png");
 }
