@@ -295,7 +295,11 @@ button:disabled{
   line-height:1.4;
 }
 .box-summary{
-  padding:10px 12px;
+  box-sizing:border-box;
+  width:fit-content;
+  max-width:100%;
+  align-self:center;
+  padding:6px 10px;
   border-radius:10px;
   text-align:center;
 }
@@ -1120,7 +1124,7 @@ function gradeForMark(mark){
 function renderStudentSearch(){
   studentResults.replaceChildren();
   const query = studentSearch.value.trim().toLowerCase();
-  if(!data.length) return;
+  if(!data.length || !query) return;
 
   const matches = data.filter(row =>
     (!course.value || row.Course === course.value) &&
