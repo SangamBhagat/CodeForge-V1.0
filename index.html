@@ -205,13 +205,31 @@ body.dark-mode .icon-moon{display:none}
 .instructor-control,
 .file-upload{min-width:0;display:flex;flex-direction:column;align-items:center}
 .instructor-control{position:relative}
+.instructor-control > input{padding-left:38px}
+.instructor-icon{
+  position:absolute;
+  left:12px;
+  top:13px;
+  width:18px;
+  height:18px;
+  color:#5b3cc4;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.8;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  pointer-events:none;
+}
+.instructor-error{align-self:flex-start;margin:5px 0 0;color:#b91c1c;font-size:12px;line-height:1.3}
+.instructor-error[hidden]{display:none}
+.instructor-control > input[aria-invalid="true"]{border-color:#dc2626}
 .file-upload .upload-status{max-width:100%}
 #file{padding:4px;line-height:34px}
 #file[data-upload-state="success"]{color:#15803d;font-weight:600}
 .instructor-placeholder{
   position:absolute;
-  top:50%;
-  left:11px;
+  top:22px;
+  left:38px;
   right:11px;
   transform:translateY(-50%);
   color:#6b7280;
@@ -222,7 +240,7 @@ body.dark-mode .icon-moon{display:none}
   text-overflow:ellipsis;
   pointer-events:none;
 }
-#instructor:not(:placeholder-shown) + .instructor-placeholder{display:none}
+#instructor:not(:placeholder-shown) ~ .instructor-placeholder{display:none}
 .required-marker{color:#dc2626;font-size:14px;line-height:0}
 #file::file-selector-button{box-sizing:border-box;height:34px;padding:0 10px;background:#5b3cc4;color:#fff;border-color:#5b3cc4;font-family:inherit;font-size:inherit;font-weight:400;cursor:pointer}
 #file::file-selector-button:hover{background:#4c2ea9;border-color:#4c2ea9}
@@ -354,14 +372,24 @@ button:disabled{
   font-weight:600;
   color:#312e81;
 }
+.student-search .search-heading{display:flex;align-items:center;gap:7px}
+.search-heading svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .student-search input{
   box-sizing:border-box;
   width:100%;
 }
+.student-filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:10px}
+.student-filters label{font-size:12px;margin-bottom:5px}
+.student-filters input,.student-filters select{box-sizing:border-box;min-width:0;width:100%;height:38px;font-family:inherit;font-size:14px}
 .student-results{
   margin-top:8px;
   font-size:13px;
+  max-height:340px;
+  overflow-y:auto;
+  overscroll-behavior:contain;
 }
+.student-results:empty{display:none}
+.student-more{display:block;margin:8px auto 0}
 .student-result{
   display:grid;
   grid-template-columns:minmax(0,1fr) auto auto;
@@ -522,6 +550,8 @@ body.dark-mode .timer-text{
   color:#c4b5fd;
 }
 body.dark-mode .icon-button{color:#ddd6fe}
+body.dark-mode .instructor-icon{color:#c4b5fd}
+body.dark-mode .instructor-error{color:#fca5a5}
 body.dark-mode input,
 body.dark-mode select{
   background:#111827;
@@ -564,6 +594,7 @@ body.dark-mode #timerArc{stroke:#a78bfa}
   .workspace{grid-template-columns:1fr}
   .controls{grid-template-columns:1fr}
   .upload-status{max-width:100%}
+  .student-filters{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media (max-width:620px){
   .container{padding:10px}
@@ -579,6 +610,7 @@ body.dark-mode #timerArc{stroke:#a78bfa}
   .icon-button svg{width:19px;height:19px}
   .controls{grid-template-columns:1fr}
   input,select,.controls > select,.instructor-control > input,.file-upload > input{font-size:16px}
+  .student-filters input,.student-filters select{height:44px;font-size:16px}
   .instructor-placeholder{font-size:16px}
   .panel{box-sizing:border-box;min-width:0}
   .grade-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
@@ -599,6 +631,7 @@ body.dark-mode #timerArc{stroke:#a78bfa}
 }
 @media (max-width:360px){
   .grade-grid{grid-template-columns:1fr}
+  .student-filters{grid-template-columns:1fr}
 }
 
 @media (prefers-reduced-motion: reduce){
@@ -652,8 +685,10 @@ body.dark-mode #timerArc{stroke:#a78bfa}
 
 <div class="controls">
   <div class="instructor-control">
-    <input id="instructor" placeholder=" " aria-label="Instructor name (mandatory)" autocomplete="name" required aria-required="true">
+    <input id="instructor" placeholder=" " aria-label="Instructor name (mandatory)" aria-describedby="instructorError" autocomplete="name" maxlength="80" required aria-required="true" aria-invalid="false">
+    <svg class="instructor-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3.5"/><path d="M5.5 20v-2a6.5 6.5 0 0 1 13 0v2"/></svg>
     <label class="instructor-placeholder" for="instructor">Instructor name <sup class="required-marker" aria-hidden="true">*</sup> (mandatory)</label>
+    <p id="instructorError" class="instructor-error" role="status" aria-live="polite" hidden></p>
   </div>
   <div class="file-upload">
     <input type="file" id="file" accept=".xlsx" aria-label="Marks file">
@@ -720,8 +755,14 @@ body.dark-mode #timerArc{stroke:#a78bfa}
   </div>
 
   <section class="panel student-search" aria-labelledby="studentSearchLabel">
-    <label id="studentSearchLabel" for="studentSearch">Student Search</label>
+    <label id="studentSearchLabel" class="search-heading" for="studentSearch"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m16 16 4.5 4.5"/></svg>Student Search</label>
     <input id="studentSearch" type="search" placeholder="Search by BITS ID" autocomplete="off" disabled>
+    <div class="student-filters">
+      <div><label for="studentGradeFilter">Grade in selected course</label><select id="studentGradeFilter" disabled><option value="">All grades</option><option>A</option><option>A-</option><option>B</option><option>B-</option><option>C</option><option>C-</option><option>D</option><option>E</option></select></div>
+      <div><label for="studentMinMarks">Marks from</label><input id="studentMinMarks" type="number" min="0" max="100" step="1" inputmode="numeric" placeholder="0" disabled></div>
+      <div><label for="studentMaxMarks">Marks to</label><input id="studentMaxMarks" type="number" min="0" max="100" step="1" inputmode="numeric" placeholder="100" disabled></div>
+      <div><label for="studentMarkSort">Sort by marks</label><select id="studentMarkSort" disabled><option value="">Original order</option><option value="desc">Highest first</option><option value="asc">Lowest first</option></select></div>
+    </div>
     <div class="student-results" id="studentResults" aria-live="polite"></div>
   </section>
 </div>
@@ -784,6 +825,38 @@ const CHART_SIZES = new Map([
   [boxPlot, {width:380, height:140}],
   [gradeDonut, {width:380, height:220}]
 ]);
+const NAME_PATTERN = /^\p{L}[\p{L}\p{M}]*(?:(?:[ '\u2019-]|\.[ ]?)\p{L}[\p{L}\p{M}]*)*\.?$/u;
+const NAME_DISALLOWED = /[^\p{L}\p{M} .'\u2019-]/gu;
+const SEARCH_PAGE_SIZE = 50;
+let visibleSearchCount = SEARCH_PAGE_SIZE;
+
+function isValidInstructorName(){
+  return NAME_PATTERN.test(instructor.value.trim());
+}
+
+function setInstructorError(message){
+  instructorError.textContent = message;
+  instructorError.hidden = !message;
+  instructor.setAttribute("aria-invalid", String(Boolean(message)));
+}
+
+function normalizeInstructorName(value){
+  return value.replace(/\s+/g, " ").replace(NAME_DISALLOWED, "")
+    .replace(/ {2,}/g, " ").slice(0, 80);
+}
+
+function resetStudentFilters(){
+  studentSearch.value = "";
+  studentGradeFilter.value = "";
+  studentMinMarks.value = "";
+  studentMaxMarks.value = "";
+  studentMarkSort.value = "";
+  for(const control of [studentSearch,studentGradeFilter,studentMinMarks,studentMaxMarks,studentMarkSort]){
+    control.disabled = true;
+  }
+  visibleSearchCount = SEARCH_PAGE_SIZE;
+  studentResults.replaceChildren();
+}
 
 function setUploadStatus(message, state="success"){
   uploadStatus.textContent = message;
@@ -839,13 +912,12 @@ grades.innerHTML = "";
  gradeSummary.innerHTML = "";
  thankyou.innerText = "";
  studentCount.textContent = "—";
- studentSearch.value = "";
- studentSearch.disabled = true;
- studentResults.textContent = "";
+ resetStudentFilters();
  clearAnalytics();
 
 download.disabled = true;
 downloadPdf.disabled = true;
+download.classList.remove("enabled");
 
 previousSummary = {};
 finalized=false;
@@ -968,8 +1040,10 @@ data = uniqueRows;
         `Uploaded successfully: ${data.length} unique student record${data.length === 1 ? "" : "s"} across ${uniqueCourses.length} course${uniqueCourses.length === 1 ? "" : "s"}.` +
         (duplicateCount ? ` ${duplicateCount} duplicate row${duplicateCount === 1 ? "" : "s"} ignored.` : "")
       );
-      studentSearch.disabled = false;
-      renderStudentSearch();
+      for(const control of [studentSearch,studentMinMarks,studentMaxMarks,studentMarkSort]){
+        control.disabled = false;
+      }
+      renderStudentSearch(true);
 
     } catch (error) {
       alert("Unable to read the Excel file.");
@@ -996,31 +1070,64 @@ course.onchange=()=>{
    gradeSummary.innerHTML = "";
    studentCount.textContent = "—";
    studentSearch.disabled = data.length === 0;
+   studentGradeFilter.value = "";
+   studentGradeFilter.disabled = true;
     clearAnalytics();
     download.disabled = true;
     downloadPdf.disabled = true;
-    renderStudentSearch();
+    download.classList.remove("enabled");
+    renderStudentSearch(true);
   return;
 }
-  if(!instructor.value.trim()){
-    alert("Please enter instructor name first");
+  if(!isValidInstructorName()){
+    setInstructorError(instructor.value.trim()
+      ? "Use a valid name with letters and common name punctuation."
+      : "Enter the instructor name first.");
     course.value="";
-    clearAnalytics();
-    renderStudentSearch();
+    instructor.focus();
+    course.onchange();
     return;
   }
 
   previousSummary = {};
   studentSearch.disabled = false;
+  studentGradeFilter.disabled = false;
   buildGradeUI();
 updateAll();
 startTimer();
 };
 
 instructor.addEventListener("input", () => {
-  if (course.value) {
-    updateAll();
+  const original = instructor.value;
+  const cursor = instructor.selectionStart;
+  const cleaned = normalizeInstructorName(original);
+  if(cleaned !== original){
+    instructor.value = cleaned;
+    if(Number.isInteger(cursor)){
+      const nextCursor = normalizeInstructorName(original.slice(0,cursor)).length;
+      instructor.setSelectionRange(nextCursor,nextCursor);
+    }
   }
+  setInstructorError(!cleaned.trim()
+    ? (cleaned !== original ? "Use letters, spaces, periods, apostrophes, or hyphens only." : "")
+    : !isValidInstructorName()
+      ? "Enter a valid name without repeated punctuation."
+      : "");
+  if (course.value) {
+    updateReportButtons();
+  }
+});
+
+instructor.addEventListener("blur", () => {
+  instructor.value = instructor.value.trim();
+  if(!isValidInstructorName()){
+    setInstructorError(instructor.value
+      ? "Enter a valid name without repeated punctuation."
+      : "Enter the instructor name.");
+  }else{
+    setInstructorError("");
+  }
+  if(course.value) updateReportButtons();
 });
 
 function cascadeMaxFrom(index){
@@ -1165,7 +1272,14 @@ function validateRanges(){
   return "";
 }
 
-studentSearch.addEventListener("input", renderStudentSearch);
+let searchRenderFrame;
+function scheduleStudentSearch(){
+  cancelAnimationFrame(searchRenderFrame);
+  searchRenderFrame = requestAnimationFrame(() => renderStudentSearch(true));
+}
+for(const control of [studentSearch,studentGradeFilter,studentMinMarks,studentMaxMarks,studentMarkSort]){
+  control.addEventListener(control.tagName === "SELECT" ? "change" : "input", scheduleStudentSearch);
+}
 
 function gradeForMark(mark){
   for(const g of GRADES){
@@ -1176,25 +1290,60 @@ function gradeForMark(mark){
   return "";
 }
 
-function renderStudentSearch(){
+function optionalMarkValue(input){
+  if(input.value === "") return null;
+  const value = Number(input.value);
+  return Number.isInteger(value) && value >= 0 && value <= 100 ? value : NaN;
+}
+
+function renderStudentSearch(resetLimit=false){
+  if(resetLimit){
+    visibleSearchCount = SEARCH_PAGE_SIZE;
+    studentResults.scrollTop = 0;
+  }
   studentResults.replaceChildren();
   const query = studentSearch.value.trim().toLowerCase();
-  if(!data.length || !query) return;
+  const gradeFilter = studentGradeFilter.value;
+  const sortOrder = studentMarkSort.value;
+  const minMark = optionalMarkValue(studentMinMarks);
+  const maxMark = optionalMarkValue(studentMaxMarks);
+  const badMarkInput = studentMinMarks.validity?.badInput || studentMaxMarks.validity?.badInput;
+  if(!data.length || (!query && !gradeFilter && minMark === null && maxMark === null && !sortOrder && !badMarkInput)) return;
 
-  const matches = data.filter(row =>
-    (!course.value || row.Course === course.value) &&
-    row["BITS ID"].toLowerCase().includes(query)
-  );
-
-  if(matches.length === 0){
-    studentResults.textContent = course.value
-      ? "No matching student in this course."
-      : "No matching student in the uploaded records.";
+  if(badMarkInput || Number.isNaN(minMark) || Number.isNaN(maxMark)){
+    studentResults.textContent = "Enter whole-number marks from 0 to 100.";
+    return;
+  }
+  if(minMark !== null && maxMark !== null && minMark > maxMark){
+    studentResults.textContent = "Marks from cannot exceed marks to.";
+    return;
+  }
+  const rangesValid = Boolean(course.value) && !validateRanges();
+  if(gradeFilter && (!course.value || !rangesValid)){
+    studentResults.textContent = "Select a course with valid grade ranges to filter by grade.";
     return;
   }
 
-  const rangesValid = course.value && !validateRanges();
-  matches.slice(0,10).forEach(row => {
+  const matches = data.filter(row =>
+    (!course.value || row.Course === course.value) &&
+    row["BITS ID"].toLowerCase().includes(query) &&
+    (minMark === null || row["Total Marks"] >= minMark) &&
+    (maxMark === null || row["Total Marks"] <= maxMark) &&
+    (!gradeFilter || gradeForMark(row["Total Marks"]) === gradeFilter)
+  );
+
+  if(sortOrder){
+    const direction = sortOrder === "desc" ? -1 : 1;
+    matches.sort((a,b) => direction * (a["Total Marks"] - b["Total Marks"]) ||
+      a["BITS ID"].localeCompare(b["BITS ID"]) || a.Course.localeCompare(b.Course));
+  }
+
+  if(matches.length === 0){
+    studentResults.textContent = "No students match these search filters.";
+    return;
+  }
+
+  matches.slice(0,visibleSearchCount).forEach(row => {
     const result = document.createElement("div");
     result.className = "student-result";
 
@@ -1219,22 +1368,26 @@ function renderStudentSearch(){
     studentResults.appendChild(result);
   });
 
-  if(matches.length > 10){
-    const more = document.createElement("div");
-    more.textContent = `Showing 10 of ${matches.length} student records. Search by BITS ID to narrow the results.`;
+  if(matches.length > visibleSearchCount){
+    const more = document.createElement("button");
+    more.type = "button";
+    more.className = "secondary student-more";
+    more.textContent = `Show more (${visibleSearchCount} of ${matches.length})`;
+    more.addEventListener("click", () => {
+      visibleSearchCount += SEARCH_PAGE_SIZE;
+      renderStudentSearch();
+    });
     studentResults.appendChild(more);
   }
 }
 
-function updateAll(){
-  const err=validateRanges();
-  rangeError.innerText=err;
+function updateReportButtons(err=validateRanges()){
   const courseData =
   data.filter(d => d.Course === course.value);
 
 const reportReady =
   !err &&
-  instructor.value.trim() !== "" &&
+  isValidInstructorName() &&
   course.value !== "" &&
   courseData.length > 0;
 const ready = !finalized && reportReady;
@@ -1245,6 +1398,12 @@ downloadPdf.disabled = !reportReady;
   download.classList.add("enabled");
 else
   download.classList.remove("enabled");
+}
+
+function updateAll(){
+  const err=validateRanges();
+  rangeError.innerText=err;
+  updateReportButtons(err);
   drawHistogram();
   drawBoxPlot();
   drawDonutChart();
@@ -1639,7 +1798,7 @@ function chartImage(width, height, paint){
 }
 
 downloadPdf.onclick = () => {
-  if(downloadPdf.disabled) return;
+  if(downloadPdf.disabled || !isValidInstructorName()) return;
   if(!window.jspdf || !window.jspdf.jsPDF){
     alert("The PDF library could not be loaded. Please check your connection and try again.");
     return;
@@ -1842,6 +2001,7 @@ downloadPdf.onclick = () => {
 };
 
 download.onclick=()=>{
+  if(download.disabled || !isValidInstructorName()) return;
   
   clearInterval(timerInterval);
 
@@ -1850,7 +2010,7 @@ download.onclick=()=>{
   const secT=Math.floor((elapsed%60000)/1000);
 
   let csv =
-  `Instructor,${csvEscape(instructor.value)}\n` +
+  `Instructor,${csvEscape(instructor.value.trim())}\n` +
   `Course,${csvEscape(course.value)}\n\n` +
   `BITS ID,Total Marks,Grade\n`;
   data.filter(d=>d.Course===course.value).forEach(d=>{
