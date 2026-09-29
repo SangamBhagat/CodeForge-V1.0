@@ -190,6 +190,8 @@ body.dark-mode .icon-moon{display:none}
   align-items:start;
   gap:12px;
   margin-bottom:12px;
+  position:relative;
+  z-index:10;
 }
 .controls > input,
 .controls > select,
@@ -251,6 +253,73 @@ input,select{
   background:#fff;
   color:#111827;
 }
+.glass-native{display:none}
+.glass-select{position:relative;min-width:0;width:100%}
+.glass-select.is-open{z-index:30}
+.glass-trigger{
+  box-sizing:border-box;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  width:100%;
+  height:44px;
+  padding:8px 12px;
+  text-align:left;
+  border:1px solid rgba(255,255,255,.88);
+  border-radius:10px;
+  color:#312e81;
+  background:linear-gradient(145deg,rgba(255,255,255,.87),rgba(222,209,255,.4)),rgba(255,255,255,.38);
+  box-shadow:0 5px 16px rgba(66,44,138,.1),inset 0 1px 0 rgba(255,255,255,.95);
+  backdrop-filter:blur(22px) saturate(165%);
+  -webkit-backdrop-filter:blur(22px) saturate(165%);
+  font:inherit;
+  font-size:14px;
+  font-weight:600;
+}
+.student-filters .glass-trigger{height:38px;font-size:14px}
+.glass-trigger-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.glass-chevron{flex:none;width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-2px) rotate(45deg);transition:transform .2s ease}
+.glass-select.is-open .glass-chevron{transform:translateY(2px) rotate(225deg)}
+.glass-menu{
+  box-sizing:border-box;
+  position:absolute;
+  top:calc(100% + 6px);
+  left:0;
+  width:100%;
+  max-height:min(280px,45vh);
+  overflow-y:auto;
+  padding:6px;
+  border:1px solid rgba(255,255,255,.86);
+  border-radius:15px;
+  background:linear-gradient(145deg,rgba(255,255,255,.83),rgba(222,208,255,.57) 54%,rgba(255,255,255,.72)),rgba(246,242,255,.7);
+  box-shadow:0 18px 38px rgba(45,31,101,.22),inset 0 1px 0 rgba(255,255,255,.98);
+  backdrop-filter:blur(30px) saturate(180%);
+  -webkit-backdrop-filter:blur(30px) saturate(180%);
+  animation:glass-menu-in .2s ease-out;
+}
+.glass-menu[hidden]{display:none}
+.glass-select.opens-up .glass-menu{top:auto;bottom:calc(100% + 6px)}
+.glass-option{
+  box-sizing:border-box;
+  display:block;
+  width:100%;
+  min-height:37px;
+  padding:8px 10px;
+  border:0;
+  border-radius:9px;
+  background:transparent;
+  color:#312e81;
+  text-align:left;
+  font:inherit;
+  font-size:13px;
+  font-weight:500;
+  overflow-wrap:anywhere;
+  box-shadow:none;
+}
+.glass-option:hover,.glass-option:focus-visible{background:rgba(255,255,255,.68);box-shadow:inset 0 1px 0 rgba(255,255,255,.85);outline:none}
+.glass-option[aria-selected="true"]{background:rgba(125,94,218,.17);color:#3c248d;font-weight:700}
+@keyframes glass-menu-in{from{opacity:0;transform:translateY(-6px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
 
 .upload-status{
   box-sizing:border-box;
@@ -367,46 +436,86 @@ button:disabled{
   transition:transform .25s ease, background-color .25s ease;
 }
 
-.student-search label{
-  display:block;
-  margin-bottom:6px;
-  font-weight:600;
-  color:#312e81;
+.student-search{
+  position:relative;
+  min-width:0;
+  padding:18px;
+  z-index:2;
+  background:linear-gradient(120deg,rgba(255,255,255,.76),rgba(235,228,255,.28) 55%,rgba(255,255,255,.48)),var(--glass-fill);
 }
-.student-search .search-heading{display:flex;align-items:center;gap:7px}
-.search-heading svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.student-search input{
+.search-intro{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.search-emblem{
+  flex:none;
+  display:grid;
+  place-items:center;
+  width:42px;
+  height:42px;
+  border-radius:14px;
+  color:#5b3cc4;
+  background:linear-gradient(145deg,rgba(255,255,255,.9),rgba(202,185,255,.52));
+  border:1px solid rgba(255,255,255,.9);
+  box-shadow:0 5px 14px rgba(91,60,196,.14),inset 0 1px 0 #fff;
+}
+.search-emblem svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.search-heading{margin:0;color:#312e81;font-size:17px;line-height:1.2}
+.search-subtitle{margin:4px 0 0;color:#5b6171;font-size:12px;line-height:1.4}
+.student-search label{display:block;margin-bottom:6px;font-weight:600;color:#312e81}
+.student-search .search-field-label{font-size:12px}
+.search-input-wrap{position:relative}
+.search-input-icon{position:absolute;left:14px;top:50%;width:18px;height:18px;transform:translateY(-50%);color:#8065ce;pointer-events:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.student-search .search-input-wrap input{
   box-sizing:border-box;
   width:100%;
+  height:46px;
+  padding-left:42px;
+  border-radius:12px;
+  border-color:rgba(139,113,209,.3);
+  background:rgba(255,255,255,.63);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 4px 14px rgba(74,53,134,.06);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
 }
-.student-filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:10px}
-.student-filters label{font-size:12px;margin-bottom:5px}
+.student-filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px}
+.filter-card{
+  min-width:0;
+  padding:10px;
+  border:1px solid rgba(255,255,255,.76);
+  border-radius:13px;
+  background:linear-gradient(145deg,rgba(255,255,255,.7),rgba(225,215,255,.22)),rgba(255,255,255,.24);
+  box-shadow:0 5px 15px rgba(68,48,126,.08),inset 0 1px 0 rgba(255,255,255,.82);
+  backdrop-filter:blur(18px) saturate(150%);
+  -webkit-backdrop-filter:blur(18px) saturate(150%);
+}
+.filter-card.select-open{position:relative;z-index:20}
+.student-filters label{font-size:12px;margin-bottom:7px}
 .student-filters input,.student-filters select{box-sizing:border-box;min-width:0;width:100%;height:38px;font-family:inherit;font-size:14px}
+.student-filters input{border-radius:9px;background:rgba(255,255,255,.73)}
 .student-results{
-  margin-top:8px;
+  margin-top:12px;
   font-size:13px;
   max-height:340px;
   overflow-y:auto;
   overscroll-behavior:contain;
+  display:grid;
+  gap:7px;
 }
 .student-results:empty{display:none}
 .student-more{display:block;margin:8px auto 0}
 .student-result{
   display:grid;
   grid-template-columns:minmax(0,1fr) auto auto;
+  align-items:center;
   gap:12px;
-  padding:8px 10px;
-  border-bottom:1px solid #e5e7eb;
+  padding:10px 12px;
+  border:1px solid rgba(162,145,214,.27);
+  border-radius:10px;
+  background:rgba(255,255,255,.55);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.75);
 }
-.student-identity{
-  min-width:0;
-  overflow-wrap:anywhere;
-}
+.student-identity{min-width:0;overflow-wrap:anywhere;font-weight:600}
 .student-identity span{display:block}
-.student-course{margin-top:3px;color:#4b5563;font-size:12px}
-.student-result strong{
-  color:#312e81;
-}
+.student-course{margin-top:3px;color:#4b5563;font-size:12px;font-weight:400}
+.student-result strong{color:#5b3cc4}
 
 .grade-grid{
   display:grid;
@@ -527,14 +636,14 @@ button.enabled{
     transform:translateY(-3px) scale(1.012);
     box-shadow:0 14px 28px rgba(91,60,196,.18);
   }
-  button:hover:not(:disabled):not(.dialog-close){
+  button:hover:not(:disabled):not(.dialog-close):not(.glass-option){
     position:relative;
     z-index:1;
     transform:translateY(-2px) scale(1.055);
     box-shadow:0 12px 24px rgba(91,60,196,.26);
     filter:brightness(1.05);
   }
-  body.dark-mode button:hover:not(:disabled):not(.dialog-close){
+  body.dark-mode button:hover:not(:disabled):not(.dialog-close):not(.glass-option){
     box-shadow:0 12px 24px rgba(139,92,246,.36);
   }
   .actions button:hover:not(:disabled)::after,.student-more:hover:not(:disabled)::after{
@@ -545,11 +654,11 @@ button.enabled{
     box-shadow:0 8px 18px rgba(91,60,196,.28);
   }
 }
-button:active:not(:disabled):not(.dialog-close){
+button:active:not(:disabled):not(.dialog-close):not(.glass-option){
   transform:scale(.97);
   box-shadow:0 3px 8px rgba(91,60,196,.18);
 }
-button:not(.icon-button):focus-visible,#file:focus-visible{outline:3px solid #a78bfa;outline-offset:3px}
+button:not(.icon-button):not(.glass-option):focus-visible,#file:focus-visible{outline:3px solid #a78bfa;outline-offset:3px}
 #file:active::file-selector-button{transform:scale(.97)}
 
 /* ===== TIMER CLOCK ===== */
@@ -638,6 +747,17 @@ body.dark-mode .student-course,
 body.dark-mode .box-summary{color:#d1d5db}
 body.dark-mode .grade-summary span.pulse{background:#6d28d9}
 body.dark-mode .student-result{border-color:#4b5563}
+body.dark-mode .student-search{background:linear-gradient(120deg,rgba(67,48,113,.4),rgba(22,26,45,.48)),var(--glass-fill)}
+body.dark-mode .search-emblem{color:#ddd6fe;background:linear-gradient(145deg,rgba(145,116,226,.34),rgba(52,39,87,.54));border-color:rgba(196,181,253,.25);box-shadow:0 5px 14px rgba(0,0,0,.18),inset 0 1px 0 rgba(221,214,254,.16)}
+body.dark-mode .search-subtitle{color:#cbd5e1}
+body.dark-mode .filter-card{background:linear-gradient(145deg,rgba(111,84,173,.21),rgba(31,35,57,.44)),rgba(27,31,51,.45);border-color:rgba(196,181,253,.2);box-shadow:0 5px 15px rgba(0,0,0,.16),inset 0 1px 0 rgba(221,214,254,.12)}
+body.dark-mode .student-search .search-input-wrap input,body.dark-mode .student-filters input{background:rgba(22,26,45,.7);border-color:rgba(196,181,253,.28)}
+body.dark-mode .student-result{background:rgba(45,42,75,.46);border-color:rgba(196,181,253,.2);box-shadow:inset 0 1px 0 rgba(221,214,254,.1)}
+body.dark-mode .glass-trigger{color:#eee8ff;background:linear-gradient(145deg,rgba(120,92,185,.3),rgba(30,34,55,.68)),rgba(27,30,50,.66);border-color:rgba(196,181,253,.25);box-shadow:0 5px 16px rgba(0,0,0,.18),inset 0 1px 0 rgba(221,214,254,.15)}
+body.dark-mode .glass-menu{background:linear-gradient(145deg,rgba(76,59,121,.84),rgba(26,29,51,.87) 58%,rgba(55,43,87,.84)),rgba(24,27,48,.8);border-color:rgba(196,181,253,.3);box-shadow:0 18px 38px rgba(0,0,0,.34),inset 0 1px 0 rgba(221,214,254,.14)}
+body.dark-mode .glass-option{color:#eee8ff}
+body.dark-mode .glass-option:hover,body.dark-mode .glass-option:focus-visible{background:rgba(167,139,250,.22)}
+body.dark-mode .glass-option[aria-selected="true"]{background:rgba(167,139,250,.3);color:#fff}
 body.dark-mode .range-control input{background:#111827}
 body.dark-mode button.secondary{
   background:#374151;
@@ -678,6 +798,7 @@ body.dark-mode #timerArc{stroke:#a78bfa}
   .controls{grid-template-columns:1fr}
   input,select,.controls > select,.instructor-control > input,.file-upload > input{font-size:16px}
   .student-filters input,.student-filters select{height:44px;font-size:16px}
+  .student-filters .glass-trigger{height:44px;font-size:16px}
   .instructor-placeholder{font-size:16px}
   .panel{box-sizing:border-box;min-width:0}
   .grade-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
@@ -688,7 +809,8 @@ body.dark-mode #timerArc{stroke:#a78bfa}
   .stats{grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
   .stat{padding:4px;font-size:10px}
   .actions button{box-sizing:border-box;min-height:44px;flex-basis:100%}
-  .student-search input{height:44px}
+  .student-search{padding:14px}
+  .student-search .search-input-wrap input{height:44px}
   .student-result{grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;padding-inline:0}
   .student-identity{grid-row:1/3}
   .student-result strong{grid-column:2;grid-row:2;font-size:12px}
@@ -825,13 +947,17 @@ body.dark-mode #timerArc{stroke:#a78bfa}
   </div>
 
   <section class="panel student-search" aria-labelledby="studentSearchLabel">
-    <label id="studentSearchLabel" class="search-heading" for="studentSearch"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m16 16 4.5 4.5"/></svg>Student Search</label>
-    <input id="studentSearch" type="search" placeholder="Search by BITS ID" autocomplete="off" disabled>
+    <div class="search-intro">
+      <span class="search-emblem" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m16 16 4.5 4.5"/></svg></span>
+      <div><h3 id="studentSearchLabel" class="search-heading">Student Search</h3><p class="search-subtitle">Find a BITS ID or explore students by grade and marks.</p></div>
+    </div>
+    <label class="search-field-label" for="studentSearch">BITS ID</label>
+    <div class="search-input-wrap"><svg class="search-input-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m16 16 4.5 4.5"/></svg><input id="studentSearch" type="search" placeholder="Search by BITS ID" autocomplete="off" disabled></div>
     <div class="student-filters">
-      <div><label for="studentGradeFilter">Grade in selected course</label><select id="studentGradeFilter" disabled><option value="">All grades</option><option>A</option><option>A-</option><option>B</option><option>B-</option><option>C</option><option>C-</option><option>D</option><option>E</option></select></div>
-      <div><label for="studentMinMarks">Marks from</label><input id="studentMinMarks" type="number" min="0" max="100" step="1" inputmode="numeric" placeholder="0" disabled></div>
-      <div><label for="studentMaxMarks">Marks to</label><input id="studentMaxMarks" type="number" min="0" max="100" step="1" inputmode="numeric" placeholder="100" disabled></div>
-      <div><label for="studentMarkSort">Sort by marks</label><select id="studentMarkSort" disabled><option value="">Original order</option><option value="desc">Highest first</option><option value="asc">Lowest first</option></select></div>
+      <div class="filter-card"><label for="studentGradeFilter">Grade in selected course</label><select id="studentGradeFilter" disabled><option value="">All grades</option><option>A</option><option>A-</option><option>B</option><option>B-</option><option>C</option><option>C-</option><option>D</option><option>E</option></select></div>
+      <div class="filter-card"><label for="studentMinMarks">Marks from</label><input id="studentMinMarks" type="number" min="0" max="100" step="1" inputmode="numeric" placeholder="0" disabled></div>
+      <div class="filter-card"><label for="studentMaxMarks">Marks to</label><input id="studentMaxMarks" type="number" min="0" max="100" step="1" inputmode="numeric" placeholder="100" disabled></div>
+      <div class="filter-card"><label for="studentMarkSort">Sort by marks</label><select id="studentMarkSort" disabled><option value="">Original order</option><option value="desc">Highest first</option><option value="asc">Lowest first</option></select></div>
     </div>
     <div class="student-results" id="studentResults" aria-live="polite"></div>
   </section>
@@ -926,6 +1052,7 @@ function resetStudentFilters(){
   }
   visibleSearchCount = SEARCH_PAGE_SIZE;
   studentResults.replaceChildren();
+  syncGlassSelects();
 }
 
 function setUploadStatus(message, state="success"){
@@ -977,6 +1104,7 @@ file.onchange = e => {
   setUploadStatus("Reading marks file...", "loading");
   course.innerHTML =
   '<option value="">Select a course to begin</option>';
+  syncGlassSelects();
 
 grades.innerHTML = "";
  gradeSummary.innerHTML = "";
@@ -1145,8 +1273,9 @@ course.onchange=()=>{
     clearAnalytics();
     download.disabled = true;
     downloadPdf.disabled = true;
-    download.classList.remove("enabled");
+   download.classList.remove("enabled");
     renderStudentSearch(true);
+    syncGlassSelects();
   return;
 }
   if(!isValidInstructorName()){
@@ -1165,6 +1294,7 @@ course.onchange=()=>{
   buildGradeUI();
 updateAll();
 startTimer();
+syncGlassSelects();
 };
 
 instructor.addEventListener("input", () => {
@@ -2124,6 +2254,155 @@ download.classList.remove("enabled");
  thankyou.innerText =
   `You completed grading in ${minT} min ${secT} sec.`;
 };
+
+/* Keep native selects as the grading/search state, with styled menus for display. */
+const glassSelects = new Map();
+let openGlassEntry = null;
+
+function closeGlassSelect(restoreFocus=false){
+  if(!openGlassEntry) return;
+  const {host,menu,trigger} = openGlassEntry;
+  host.classList.remove("is-open", "opens-up");
+  host.closest(".filter-card")?.classList.remove("select-open");
+  menu.hidden = true;
+  trigger.setAttribute("aria-expanded", "false");
+  openGlassEntry = null;
+  if(restoreFocus) trigger.focus();
+}
+
+function syncGlassSelects(){
+  for(const [select,entry] of glassSelects){
+    const options = Array.from(select.options);
+    const signature = JSON.stringify(options.map(option => [option.value,option.text,option.disabled]));
+    if(signature !== entry.signature){
+      entry.signature = signature;
+      entry.menu.replaceChildren(...options.map((option,index) => {
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = "glass-option";
+        item.setAttribute("role", "option");
+        item.dataset.index = String(index);
+        item.textContent = option.text;
+        item.disabled = option.disabled;
+        item.tabIndex = -1;
+        return item;
+      }));
+    }
+    const selected = options[select.selectedIndex];
+    const currentText = selected?.text || options[0]?.text || "Select";
+    entry.triggerText.textContent = currentText;
+    entry.trigger.setAttribute("aria-label", `${entry.label}: ${currentText}`);
+    entry.trigger.disabled = select.disabled;
+    for(const item of entry.menu.children){
+      item.setAttribute("aria-selected", String(Number(item.dataset.index) === select.selectedIndex));
+    }
+    if(select.disabled && openGlassEntry === entry) closeGlassSelect();
+  }
+}
+
+function openGlassSelect(entry, focusOption=false, step=0){
+  if(entry.select.disabled) return;
+  closeGlassSelect();
+  syncGlassSelects();
+  entry.menu.hidden = false;
+  entry.host.classList.add("is-open");
+  entry.host.closest(".filter-card")?.classList.add("select-open");
+  entry.trigger.setAttribute("aria-expanded", "true");
+  openGlassEntry = entry;
+  const roomBelow = window.innerHeight - entry.trigger.getBoundingClientRect().bottom;
+  const roomAbove = entry.trigger.getBoundingClientRect().top;
+  entry.host.classList.toggle("opens-up", roomBelow < Math.min(entry.menu.scrollHeight,280) + 12 && roomAbove > roomBelow);
+  if(focusOption){
+    const items = Array.from(entry.menu.querySelectorAll(".glass-option:not(:disabled)"));
+    const selectedIndex = items.findIndex(item => item.getAttribute("aria-selected") === "true");
+    const target = items[Math.max(0,Math.min(items.length - 1,selectedIndex + step))] || items[0];
+    target?.focus({preventScroll:true});
+    target?.scrollIntoView({block:"nearest"});
+  }
+}
+
+for(const select of [course,studentGradeFilter,studentMarkSort]){
+  const labelElement = select.labels?.[0];
+  const label = labelElement?.textContent.trim() || select.getAttribute("aria-label") || "Select";
+  const host = document.createElement("div");
+  host.className = "glass-select";
+  const trigger = document.createElement("button");
+  trigger.type = "button";
+  trigger.className = "glass-trigger";
+  trigger.setAttribute("aria-haspopup", "listbox");
+  trigger.setAttribute("aria-expanded", "false");
+  trigger.setAttribute("aria-controls", `${select.id}GlassMenu`);
+  const triggerText = document.createElement("span");
+  triggerText.className = "glass-trigger-text";
+  const chevron = document.createElement("span");
+  chevron.className = "glass-chevron";
+  chevron.setAttribute("aria-hidden", "true");
+  trigger.append(triggerText,chevron);
+  const menu = document.createElement("div");
+  menu.id = `${select.id}GlassMenu`;
+  menu.className = "glass-menu";
+  menu.setAttribute("role", "listbox");
+  menu.setAttribute("aria-label", label);
+  menu.hidden = true;
+  host.append(trigger,menu);
+  select.insertAdjacentElement("afterend",host);
+  select.classList.add("glass-native");
+  select.tabIndex = -1;
+  select.setAttribute("aria-hidden", "true");
+  const entry = {select,host,trigger,triggerText,menu,label,signature:""};
+  glassSelects.set(select,entry);
+
+  trigger.addEventListener("click", () => openGlassEntry === entry ? closeGlassSelect() : openGlassSelect(entry));
+  trigger.addEventListener("keydown", event => {
+    if(["ArrowDown","ArrowUp","Home","End"].includes(event.key)){
+      event.preventDefault();
+      openGlassSelect(entry,true,event.key === "ArrowDown" ? 1 : event.key === "ArrowUp" ? -1 : 0);
+      if(event.key === "Home" || event.key === "End"){
+        const items = entry.menu.querySelectorAll(".glass-option:not(:disabled)");
+        const target = event.key === "Home" ? items[0] : items[items.length - 1];
+        target?.focus({preventScroll:true});
+        target?.scrollIntoView({block:"nearest"});
+      }
+    }else if(event.key === "Escape"){
+      closeGlassSelect();
+    }
+  });
+  menu.addEventListener("click", event => {
+    const item = event.target.closest(".glass-option");
+    if(!item || item.disabled) return;
+    select.selectedIndex = Number(item.dataset.index);
+    closeGlassSelect(true);
+    select.dispatchEvent(new Event("change",{bubbles:true}));
+    syncGlassSelects();
+  });
+  menu.addEventListener("keydown", event => {
+    if(event.key === "Escape"){
+      event.preventDefault();
+      closeGlassSelect(true);
+    }else if(event.key === "Tab"){
+      closeGlassSelect();
+    }else if(["ArrowDown","ArrowUp","Home","End"].includes(event.key)){
+      event.preventDefault();
+      const items = Array.from(menu.querySelectorAll(".glass-option:not(:disabled)"));
+      const index = items.indexOf(document.activeElement);
+      const next = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1 :
+        Math.max(0,Math.min(items.length - 1,index + (event.key === "ArrowDown" ? 1 : -1)));
+      items[next]?.focus({preventScroll:true});
+      items[next]?.scrollIntoView({block:"nearest"});
+    }
+  });
+  labelElement?.addEventListener("click", event => {
+    event.preventDefault();
+    trigger.focus();
+  });
+  select.addEventListener("change", syncGlassSelects);
+  new MutationObserver(syncGlassSelects).observe(select,{attributes:true,attributeFilter:["disabled"],childList:true,subtree:true});
+}
+syncGlassSelects();
+document.addEventListener("pointerdown", event => {
+  if(openGlassEntry && !openGlassEntry.host.contains(event.target)) closeGlassSelect();
+});
+window.addEventListener("resize", () => closeGlassSelect());
 </script>
 </body>
 </html>
